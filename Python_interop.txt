@@ -1,1 +1,2 @@
 You can invoke pythong scripts as cgi using httpd provided you have installed python and have it in the PATH
+You may also use IIS instead of htttpd
