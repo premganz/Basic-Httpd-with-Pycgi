@@ -1,0 +1,480 @@
+###Example elastic search
+import sys
+import os.path
+import pandas as panda
+sys.path.extend(['C:\\work\\statis\\matplotlib'])
+import json
+import requests
+class DataImport:
+
+    def from_this_dir(self, filename):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+
+    def analyzeData(self):
+        listPrices=[]
+        print(listPrices)
+        pdf = panda.read_csv("C:/work/statis/mv_crash_stats4.csv")
+        weatherList=[]
+        j=0
+        for index,car in pdf.iterrows() :
+            j=j+1
+            if(j<2):
+                weatherList.append(car['Weather Conditions'])
+            # print (car['Weather Conditions'])
+        # print(weatherList)
+        weatherMap =pdf.to_dict('record')
+        k=0
+        for dict1 in weatherMap :
+            k=k+1
+            dict1['Id']=k
+            r = json.dumps(dict1)
+            id=dict1['Id']
+            url = 'http://localhost:9200/company5/records/'\
+                  +str(id)
+            # data = r
+            data='''
+            {
+            "Year":"2016",
+            "Month":"Aug"
+            }
+            '''
+            print(r)
+            # requests.h
+            response = requests.post(url, data=r, headers={"Content-Type": "application/json"})
+            print(response)
+
+        # print(r)
+        print('done')
+
+
+
+    def queryData(self):
+        url = 'http://localhost:9200/company5/records/_search'
+        yearWiseCount={}
+        for year in range(2000,2018):
+            data='''
+                       {
+                        "query": {
+                        "match": {
+                            "Year":
+            '''+str(year)+"}}}"
+            data='{"query": {"wildcard": {"Year":"2014"}}}'
+            response = requests.post(url, data=data, headers={"Content-Type": "application/json"})
+            sid=int(response.json()['hits']['total'])
+            print(response.text)
+            print(sid)
+            print(response)
+            yearWiseCount[year]=sid
+        counter=0
+        for v in yearWiseCount:
+            counter=counter+yearWiseCount[v]
+        print(str(counter))
+
+
+    def exploreData(self):
+        url = 'http://localhost:9200/company5/records/_search'
+        yearWiseCount={}
+        data='{"query": {"wildcard": {"Year":{ "wildcard" : "2014"}}}}'
+        response = requests.post(url, data=data, headers={"Content-Type": "application/json"})
+        sid=int(response.json()['hits']['total'])
+        print(response.text)
+        print(sid)
+        print(response)
+
+var = DataImport()
+# var.analyzeData()
+# var.queryData()
+var.exploreData()
+###plotting
+from collections import Sequence
+from itertools import zip_longest
+import sys
+sys.path.extend(['C:\\CDQM\\Python\\xlrd-0.9.3'])
+import xlrd
+import os.path
+sys.path.extend(['C:\\work\\statis\\matplotlib'])
+
+
+class DataImport:
+
+    def from_this_dir(self, filename):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+
+    def loadData(self):
+        import csv
+        lineCount=0
+        headers=[]
+        rowList=[]
+
+        with open('C:\\work\\statis\\cars.csv') as csvFile:
+            csvReader = csv.reader(csvFile)
+            for row in csvReader:
+                lineCount+=1
+                rec ={}
+                if lineCount==1:
+                    headers=row
+                else:
+                    rec={}
+                    for i in range(len(headers)):
+                        rec[headers[i]]=row[i]
+                    rowList.append(rec)
+                    print('appended '+str(rec))
+
+        print(headers)
+        print (lineCount)
+        print(len(rowList))
+        return rowList
+
+    def workWithCrashStats(self):
+        import pandas as panda
+        pdf = panda.read_csv("C:\work\statis\mv_crash_stats.csv")
+        print(pdf.info())
+
+
+    def analyzeData(self):
+        # rowList=self.loadData()
+
+        # print(rowList)
+        listPrices=[]
+        # for car in rowList:
+        #     listPrices.append(car['cost'])
+        # listPrices1 = [int(x['cost']) for x in rowList if int(x['cost'])>0 and x['valid']=='1']
+        # listPrices=list(map( lambda x:x['valid']=='1',list(map(lambda x:int(x['cost']), rowList))))
+        # print(listPrices1)
+        import pandas as panda
+        import matplotlib.pyplot as plot
+        import scipy.stats as stats
+        import numpy as np
+        # convert listPrices to continous
+        # listPrices=sorted([x-min(listPrices1) for x in listPrices1])
+        print(listPrices)
+        pdf = panda.read_csv("C:\work\statis\cars.csv")
+        print(pdf.info)
+        listPrices=sorted(list(pdf.cost))
+        carsMap = dict(zip(list(pdf.cost),np.linspace(1,28,28)))
+        print(carsMap)
+        sample = np.array(listPrices)
+        mean=np.mean(sample)
+        variance=np.var(sample)
+        sd=np.sqrt(variance)
+        print(mean,variance,sd)
+
+        x_axis_line_series=np.linspace(0, 139,139)
+        norm_pdf=stats.norm.pdf(x_axis_line_series,mean,sd)
+        # plot.plot(x,norm_pdf, label='NORM_PDF')
+        plot.xlabel('cost')
+        plot.ylabel('Probability')
+        plot.title('Histogram of prices')
+        # The first plt.text arguments are coordinates x,y of the plot
+        plot.text(40, 0.015,r'pdf over prices')
+        plot.legend("pdf empirical", loc='upper right')
+        # plot.axis([0,140, 0, 0.1])
+        emp_prob_cdf = stats.norm.cdf(sample,mean,sd)
+        emp_prob_pdf_norm = stats.norm.pdf(sample,mean,sd)
+        emp_prob_samples = stats.norm.rvs(emp_prob_cdf)
+        print("random samples")
+        print(emp_prob_samples)
+        # emp_prob_pdf = stats.rv_continuous(listPrices)
+        # np.random.normal(100)
+        print(emp_prob_pdf_norm)
+        plot.plot(np.linspace(0, 140,28),emp_prob_pdf_norm, label='EMP PDF')
+
+
+
+        from functools import reduce
+        densitywise_below_25=reduce((lambda x,y: x+y), emp_prob_pdf_norm)
+        print("density below 25 is  "+str(densitywise_below_25))
+        print("prob below 25 is by direct method "+str(emp_prob_cdf))
+        #
+        # import scipy.integrate as integrate
+        # import scipy.special as special
+        # result = integrate.quad(stats.norm.pdf(sample,mean,sd), 0, 25)
+        # print("density below 25 is by integration "+str(result))
+        #
+        # cumulative_below_val= emp_prob_cdf[25]
+        # count_below_val=cumulative_below_val*28
+
+        plot.show()
+
+
+var = DataImport()
+var.analyzeData()
+# import matplotlib.pyplot as plot
+# import numpy as np
+# plot.plot(np.linspace(0,100,100),np.geomspace(1,100,100), label='EMP PDF')
+# line = np.linspace(0,100,100)
+# plot.plot(line,list(map(lambda x:x**1.05,line)))
+# from functools import reduce
+# cumulative = reduce((lambda x,y:x+y),list(line))
+# print(cumulative)
+# plot.show()
+###Cars- histogram
+from collections import Sequence
+from itertools import zip_longest
+import sys
+sys.path.extend(['C:\\CDQM\\Python\\xlrd-0.9.3'])
+import xlrd
+import os.path
+sys.path.extend(['C:\\work\\statis\\matplotlib'])
+
+
+class DataImport:
+
+    def from_this_dir(self, filename):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+
+    def loadData(self):
+        import csv
+        lineCount=0
+        headers=[]
+        rowList=[]
+
+        with open('C:\\work\\statis\\cars.csv') as csvFile:
+            csvReader = csv.reader(csvFile)
+            for row in csvReader:
+                lineCount+=1
+                rec ={}
+                if lineCount==1:
+                    headers=row
+                else:
+                    rec={}
+                    for i in range(len(headers)):
+                        rec[headers[i]]=row[i]
+                    rowList.append(rec)
+                    print('appended '+str(rec))
+
+        print(headers)
+        print (lineCount)
+        print(len(rowList))
+        return rowList
+
+
+
+
+    def drawHistChart(self):
+        rowList=self.loadData()
+
+        # print(rowList)
+        listPrices=[]
+        # for car in rowList:
+        #     listPrices.append(car['cost'])
+        listPrices1 = [int(x['cost']) for x in rowList if int(x['cost'])>0 and x['valid']=='1']
+        # listPrices=list(map( lambda x:x['valid']=='1',list(map(lambda x:int(x['cost']), rowList))))
+        # print(listPrices1)
+
+        import matplotlib.pyplot as plot
+        import scipy.stats as stats
+        from collections import Counter
+        import numpy as np
+        # convert listPrices to continous
+        listPrices=sorted([x-min(listPrices1) for x in listPrices1])
+        print(listPrices)
+        sample = np.array(listPrices)
+
+        mean=np.mean(sample)
+        variance=np.var(sample)
+        sd=np.sqrt(variance)
+
+        print(mean,variance,sd)
+        x=np.linspace(0, 139,139)
+        cars_norm=stats.norm.pdf(x,mean,sd)
+        cars_norm2=stats.skewnorm.pdf(x,*stats.skewnorm.fit(sample))
+        plot1=plot.plot(x,cars_norm, label='PDF')
+        plot2,=plot.plot(x,cars_norm2, label='SKEW PDF')
+
+
+        # n, bins,patches=plot.hist(sample,10,density=True,facecolor='b',edgecolor='red', alpha=0.5)
+        # plot.axvline(label='Mean=12',x=30.2,linestyle='dashed')
+        # plot.axvline(label='Mean-2sigma=-1 lac',x=20.06,linestyle='dashed')
+        # plot.axvline(label='Mean+2sigma=26 lac',x=10.34, linestyle='dashed')
+        plot.xlabel('cost')
+        plot.ylabel('Probability')
+        plot.title('Histogram of prices')
+        # The first plt.text arguments are coordinates x,y of the plot
+        plot.text(40, 0.015,r'mean=404.2,sigma=123.07')
+        plot.legend((plot1,plot2),("PDF", "SKEW_PDF"), loc='upper right')
+        #plot.axis([0,140, 0, 0.1])
+
+        prob_cdf = stats.norm.cdf(sample,mean,sd)
+        prob_pdf = stats.norm.pdf(sample,mean,sd)
+        print(prob_pdf)
+        from functools import reduce
+        basic_cutoff=4
+        x1=0
+        import scipy.integrate as integrate
+        import scipy.special as special
+        result = integrate.quad(lambda x: x, 0, 130)
+
+        densitywise_below_25=reduce(lambda x,y: x1+y, prob_pdf)
+        print("density below 25 is  "+str(densitywise_below_25))
+        print("density below 25 is by integration "+str(result))
+        z_score_min = (4-15.96)/26.17
+        z_score_max = (15-15.96)/26.17
+        # print(z_score_min,z_score_max)
+
+        cumulative_below_val= prob_cdf[25]
+        count_below_val=cumulative_below_val*28
+
+        counter=0
+        # print(cumulative_below_val,count_below_val)
+        # print(cumulative_below_val, densitywise_below_25)
+        #plot.plot(prob_pdf)
+        # plot.show()
+
+
+        # n_bins = 5
+        # fig, axes = plot.subplots(nrows=2, ncols=1)
+        # ax0, ax1= axes.flatten()
+        # colors = ['red', 'blue', 'lime', 'tan', 'yellow']
+        # # colors={
+        # #     labels[0]:'red',
+        # #     labels[1]:'blue',
+        # #     labels[2]:'tan',
+        # #     labels[3]:'lime',
+        # #     labels[4]:'yellow',
+        # # }
+        # ax0.hist( subValues, bins=n_bins,histtype='bar', color=['blue'], label=subLabels)
+        # ax0.legend(prop={'size': 10})
+        # ax0.set_title('Top Five diseases')
+        # fig.tight_layout()
+        # plot.show()
+
+
+var = DataImport()
+var.drawHistChart()
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(1)
+
+n_bins = 10
+x = np.random.randn(10, 5)
+
+fig, axes = plt.subplots(nrows=2, ncols=2)
+ax0, ax1, ax2, ax3 = axes.flatten()
+# print(x)
+colors = ['red', 'blue', 'lime', 'brown', 'black']
+ax0.hist(x, n_bins, density=True, histtype='bar', color=colors, label=colors)
+ax0.legend(prop={'size': 10})
+ax0.set_title('bars with legend')
+
+
+fig.tight_layout()
+# plt.show()
+###lambda expressions
+from collections import Sequence
+import sys
+sys.path.extend(['C:\\CDQM\\Python\\xlrd-0.9.3'])
+import xlrd
+import shutil
+import zipfile
+import os.path
+import time
+sys.path.extend(['C:\\work\\statis\\matplotlib'])
+def processRow( x):
+        #if (x['country']==u'United States of America'):
+        #    print('count is'+ str(x['count']))
+        if (x['country']==u'Sierra Leone'):
+            print('Sierra Lenon count is:'+ str(x['count']))
+            return True
+        else:
+            return False
+
+class DataImport:
+    book=''
+    sheet=''
+
+    def from_this_dir(self, filename):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+
+
+    def processImport(self):
+        import matplotlib.pyplot as plot
+
+        self.book = xlrd.open_workbook(self.from_this_dir('C:\\work\\statis\\data1.xlsx'), formatting_info=False)
+        self.sheet = self.book.sheet_by_name('Sheet1')
+        print(self.sheet._dimncols)
+
+        rowlist=[]
+        for i in range(1,17586):
+            #print(self.sheet.cell(i,j))
+            rec={}
+            rec['indicator']=self.sheet.cell_value(i,0)
+            #print('date'+unicode(xlrd.xldate.xldate_as_datetime(self.sheet.cell_value(i,2),0)))
+            rec['country']=self.sheet.cell_value(i,1)
+            rec['date']=xlrd.xldate.xldate_as_datetime(self.sheet.cell_value(i,2),0)
+            rec['count']=self.sheet.cell_value(i,3)
+            rowlist.append(rec)
+
+        #print(rowlist)
+
+
+        #if(map(lambda x:x['country']==u'United States of America',rowlist)):
+        memoized={}
+        # for rec in rowlist:
+        #     if not rec['country'] in memoized :
+        #         memoized[rec['country']]=1
+        #     else:
+        #         count=memoized[rec['country']]
+        #         memoized[rec['country']]=count+1
+
+
+        for rec in rowlist:
+            country=rec['country']
+            count=rec['count']
+            if not country in memoized:
+                memoized[country]=0
+            if memoized[country] < count :
+                memoized[country]=count
+
+
+
+        print(memoized)
+
+        tuplesDict={}
+        plotlines=[]
+        inverseMemoized={}
+        counter=0
+        for key,value in memoized.items():
+            if(value in  inverseMemoized ):
+                value+=1
+            inverseMemoized[value]=key
+        print(inverseMemoized)
+        print(sorted(inverseMemoized.keys(),reverse=True))
+        for key in sorted(inverseMemoized.keys(),reverse=True):
+            counter += 1
+            sierraTuples=self.filterByCountry(inverseMemoized[key], rowlist)
+            print('country = '+inverseMemoized[key])
+            plotlines.append((sierraTuples))
+
+
+        zipper = zip (*plotlines[0])
+
+        liberiaTuples=self.filterByCountry('Liberia', rowlist)
+        #plot.plot(*zip(*sierraTuples),*zip(*liberiaTuples),*zip(*senegalTuples)) and plot.show()
+        plot.plot(*zip (*plotlines[0]),*zip (*plotlines[1]),*zip (*plotlines[2]),*zip (*plotlines[3]),*zip (*plotlines[4]))
+        plot.show()
+
+
+
+
+
+
+        #EbolaStats['country']='USA'
+        #EbolaStats[self.sheet.cell_value(i,j-1)]=++templist(i,j+2)
+        #else:
+        #    print('non us record')
+    def filterByCountry(self,countryName, rowlist):
+        seriesOfSierra=list(filter(lambda x:x['country']==countryName,rowlist))
+        sierraTuples=[]
+        #print('number of sierra records is'+str(seriesOfSierra))
+        seriesOfSierra.sort(key=lambda x:x['date'])
+        for row in seriesOfSierra:
+            if(row['indicator']==u'Cumulative number of confirmed, probable and suspected Ebola cases'):
+                tuple=(row['date'],row['count'])
+                sierraTuples.append(tuple)
+        #print(sierraTuples)
+        return sierraTuples
+
+var = DataImport()
+var.processImport()
